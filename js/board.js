@@ -78,9 +78,11 @@ function zoomOut() { zoomAt(1 / 1.15); }
 function zoomReset() {
   zoom = 1;
   var rect = boardEl.getBoundingClientRect();
-  pan.x = rect.width / 2 - OFFSET;
-  pan.y = rect.height / 2 - OFFSET;
+  pan.x = rect.width / 2;
+  pan.y = rect.height / 2;
+  lastAnchor = { x: 0, y: 0 };
   applyTransform();
+  updateHud();
 }
 
 function fitRect(minX, minY, w, h) {

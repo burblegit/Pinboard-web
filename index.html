@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detective Board</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="menubar"></div>
+
+<div id="toolbar">
+  <button class="btn" id="btn-new-note">📌 New Note</button>
+  <span class="toolbar-label">Filter:</span>
+  <select id="filter-select">
+    <option>All</option>
+    <option>Incomplete</option>
+    <option>Completed</option>
+    <option>Low Priority</option>
+    <option>High Priority</option>
+  </select>
+  <div class="toolbar-sep"></div>
+  <button class="btn" id="btn-link">🔗 Link (L)</button>
+  <div class="toolbar-sep"></div>
+  <button class="btn" id="btn-zoom-in">🔍+</button>
+  <button class="btn" id="btn-zoom-out">🔍-</button>
+  <button class="btn" id="btn-fit">↺ Fit</button>
+  <div class="toolbar-sep"></div>
+  <button class="btn rgb" id="btn-rgb" title="RGB Signal Mode">🌈 RGB</button>
+  <button class="btn" id="btn-debug" title="Toggle XY Debug">📐 Debug</button>
+  <span class="toolbar-label" style="margin-left:auto;color:#8B6914;">v14</span>
+</div>
+
+<div id="board">
+  <div id="world">
+    <div id="rgb-layer"></div>
+    <div id="debug-marker"></div>
+    <svg id="link-layer" width="4000" height="4000"></svg>
+  </div>
+</div>
+
+<div id="debug-hud"></div>
+
+<div id="statusbar"><span id="status-label">Remaining: 0</span></div>
+
+<input type="file" id="file-input" accept=".json,application/json" hidden>
+<div id="modal-root"></div>
+
+<script src="js/model.js"></script>
+<script src="js/board.js"></script>
+<script src="js/dialogs.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

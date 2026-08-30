@@ -16,7 +16,8 @@ var menuData = {
     { label: '\uD83D\uDCCC New Note', kbd: 'Ctrl+Shift+N', action: addNoteFlow }
   ],
   view: [
-    { label: '\uD83D\uDD04 Reset View', kbd: 'Ctrl+R', action: resetView }
+    { label: '\uD83D\uDD04 Reset View', kbd: 'Ctrl+R', action: resetView },
+    { label: '\u2728 Extras', action: extrasDialog }
   ]
 };
 
@@ -135,17 +136,48 @@ document.getElementById('btn-link').addEventListener('click', function () {
 document.getElementById('btn-zoom-in').addEventListener('click', zoomIn);
 document.getElementById('btn-zoom-out').addEventListener('click', zoomOut);
 document.getElementById('btn-fit').addEventListener('click', zoomReset);
-document.getElementById('btn-rgb').addEventListener('click', function () {
+function toggleRgb() {
   document.body.classList.toggle('rgb-mode');
-  this.classList.toggle('checked', document.body.classList.contains('rgb-mode'));
+  var b = document.getElementById('btn-rgb');
+  if (b) b.classList.toggle('checked', document.body.classList.contains('rgb-mode'));
+}
+function toggleDebug() {
+  debugOn = !debugOn;
+  document.body.classList.toggle('debug-mode', debugOn);
+  var b = document.getElementById('btn-debug');
+  if (b) b.classList.toggle('checked', debugOn);
+  if (debugOn) updateHud();
+  else debugHud.textContent = '';
+}
+function extrasDialog() {
+  var d = openDialog(
+    '<h3>Extras</h3>' +
+    '<div class="dlg-row" style="justify-content:space-between;"><span class="dlg-label" style="margin:0;">\uD83C\uDF08 RGB Signal Mode</span><button type="button" class="btn' + (document.body.classList.contains('rgb-mode') ? ' pressed' : '') + '" id="ex-rgb" data-on="' + (document.body.classList.contains('rgb-mode') ? '1' : '0') + '">' + (document.body.classList.contains('rgb-mode') ? '\u2713' : '') + '</button></div>' +
+    '<div class="dlg-row" style="justify-content:space-between;"><span class="dlg-label" style="margin:0;">\uD83D\uDCC0 XY Debug</span><button type="button" class="btn' + (debugOn ? ' pressed' : '') + '" id="ex-debug" data-on="' + (debugOn ? '1' : '0') + '">' + (debugOn ? '\u2713' : '') + '</button></div>' +
+    '<div class="dlg-actions"><button type="button" class="dlg-btn" data-act="close">Close</button></div>'
+  );
+  function bind(btnId, toggleFn) {
+    var btn = d.box.querySelector(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      toggleFn();
+      var on = (btnId === '#ex-rgb') ? document.body.classList.contains('rgb-mode') : debugOn;
+      btn.classList.toggle('pressed', on);
+      btn.textContent = on ? '\u2713' : '';
+    });
+  }
+  bind('#ex-rgb', toggleRgb);
+  bind('#ex-debug', toggleDebug);
+  d.box.querySelector('[data-act="close"]').addEventListener('click', function(){ d.close(); });
+}
+
+document.getElementById('btn-rgb').addEventListener('click', function () {
+  toggleRgb();
 });
 
 document.getElementById('btn-debug').addEventListener('click', function () {
-  debugOn = !debugOn;
-  document.body.classList.toggle('debug-mode', debugOn);
-  this.classList.toggle('checked', debugOn);
-  if (debugOn) updateHud();
-  else debugHud.textContent = '';
+  toggleDebug();
 });
 
 ['btn-new-note', 'btn-link', 'btn-zoom-in', 'btn-zoom-out', 'btn-fit', 'btn-rgb', 'btn-debug'].forEach(function (id) {

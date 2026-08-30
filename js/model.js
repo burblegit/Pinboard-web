@@ -25,6 +25,13 @@ function esc(s) {
   return String(s).replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
 }
 
+var STORAGE_KEY = 'pinboardNotes.data';
+
+function debounceSave() {
+  clearTimeout(model._saveTimer);
+  model._saveTimer = setTimeout(function(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(model.toJSON())); } catch(e){} }, 300);
+}
+
 function BoardModel() {
   this.tasks = {};
   this.links = new Set();
@@ -58,6 +65,7 @@ BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typ
     task.content = typeData && typeData.textContent ? typeData.textContent : '';
   }
   this.tasks[task.id] = task;
+  debounceSave();
   return task;
 };
 
@@ -70,6 +78,7 @@ BoardModel.prototype.removeTask = function (id) {
       var parts = link.split('|');
       if (parts[0] === id || parts[1] === id) self.links.delete(link);
     });
+    debounceSave();
   }
   return task;
 };
@@ -77,6 +86,7 @@ BoardModel.prototype.removeTask = function (id) {
 BoardModel.prototype.toggleCompleted = function (id) {
   if (this.tasks[id]) {
     this.tasks[id].completed = !this.tasks[id].completed;
+    debounceSave();
     return true;
   }
   return false;
@@ -86,12 +96,14 @@ BoardModel.prototype.updatePosition = function (id, x, y) {
   if (this.tasks[id]) {
     this.tasks[id].x = x;
     this.tasks[id].y = y;
+    debounceSave();
   }
 };
 
 BoardModel.prototype.updateListItems = function (id, items) {
   if (this.tasks[id] && this.tasks[id].type === 'List') {
     this.tasks[id].listItems = items;
+    debounceSave();
     return true;
   }
   return false;
@@ -101,6 +113,7 @@ BoardModel.prototype.updateImageData = function (id, imageData, caption) {
   if (this.tasks[id] && this.tasks[id].type === 'Image') {
     this.tasks[id].imageData = imageData;
     if (caption !== undefined) this.tasks[id].caption = caption;
+    debounceSave();
     return true;
   }
   return false;
@@ -110,6 +123,7 @@ BoardModel.prototype.updateCodeContent = function (id, codeContent, language) {
   if (this.tasks[id] && this.tasks[id].type === 'Code') {
     this.tasks[id].codeContent = codeContent;
     if (language !== undefined) this.tasks[id].language = language;
+    debounceSave();
     return true;
   }
   return false;
@@ -118,6 +132,7 @@ BoardModel.prototype.updateCodeContent = function (id, codeContent, language) {
 BoardModel.prototype.updateSketchData = function (id, sketchData) {
   if (this.tasks[id] && this.tasks[id].type === 'Sketch') {
     this.tasks[id].sketchData = sketchData;
+    debounceSave();
     return true;
   }
   return false;
@@ -126,6 +141,7 @@ BoardModel.prototype.updateSketchData = function (id, sketchData) {
 BoardModel.prototype.updateContent = function (id, content) {
   if (this.tasks[id] && this.tasks[id].type === 'Text') {
     this.tasks[id].content = content;
+    debounceSave();
     return true;
   }
   return false;
@@ -134,6 +150,7 @@ BoardModel.prototype.updateContent = function (id, content) {
 BoardModel.prototype.updateDueDate = function (id, dueDate) {
   if (this.tasks[id]) {
     this.tasks[id].dueDate = dueDate;
+    debounceSave();
     return true;
   }
   return false;
@@ -174,13 +191,16 @@ BoardModel.prototype.linkKey = function (id1, id2) {
 BoardModel.prototype.addLink = function (id1, id2) {
   if (id1 !== id2 && this.tasks[id1] && this.tasks[id2]) {
     this.links.add(this.linkKey(id1, id2));
+    debounceSave();
     return true;
   }
   return false;
 };
 
 BoardModel.prototype.removeLink = function (id1, id2) {
-  return this.links.delete(this.linkKey(id1, id2));
+  var ok = this.links.delete(this.linkKey(id1, id2));
+  if (ok) debounceSave();
+  return ok;
 };
 
 BoardModel.prototype.hasLink = function (id1, id2) {
@@ -202,6 +222,7 @@ BoardModel.prototype.getRemaining = function () {
 BoardModel.prototype.clear = function () {
   this.tasks = {};
   this.links.clear();
+  debounceSave();
 };
 
 BoardModel.prototype.getAll = function () {
@@ -216,10 +237,12 @@ BoardModel.prototype.getAllPriorities = function () {
 
 BoardModel.prototype.addCustomPriority = function (name, color) {
   this.custom_priorities[name] = color;
+  debounceSave();
 };
 
 BoardModel.prototype.removeCustomPriority = function (name) {
   delete this.custom_priorities[name];
+  debounceSave();
 };
 
 BoardModel.prototype.getTaskIdsByPriority = function (name) {
@@ -309,5 +332,9 @@ BoardModel.prototype.loadFromJSON = function (data) {
   return true;
 };
 
+BoardModel.prototype.save = function() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.toJSON())); } catch(e){} };
+BoardModel.prototype.load = function() { try { var raw = localStorage.getItem(STORAGE_KEY); if(!raw) return false; return this.loadFromJSON(JSON.parse(raw)); } catch(e){ return false; } };
+
 var model = new BoardModel();
-// Start with empty board
+try { var _raw = localStorage.getItem(STORAGE_KEY); if(_raw) model.loadFromJSON(JSON.parse(_raw)); } catch(e){}
+// Start with empty board if nothing saved

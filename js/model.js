@@ -31,7 +31,7 @@ function BoardModel() {
   this.custom_priorities = {};
 }
 
-BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typeData, dueDate, timeTracked) {
+BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typeData, dueDate, textStyle) {
   var task = {
     id: Math.random().toString(16).substr(2, 8),
     title: title,
@@ -43,7 +43,7 @@ BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typ
     type: type || 'Text',
     created_at: new Date().toISOString(),
     dueDate: dueDate || null,
-    timeTracked: timeTracked || 0
+    textStyle: textStyle || null
   };
   if (type === 'List') {
     task.listItems = (typeData && typeData.items) || [{ text: '', completed: false }];
@@ -140,17 +140,9 @@ BoardModel.prototype.updateDueDate = function (id, dueDate) {
   return false;
 };
 
-BoardModel.prototype.updateTimeTracked = function (id, timeTracked) {
+BoardModel.prototype.updateTextStyle = function (id, textStyle) {
   if (this.tasks[id]) {
-    this.tasks[id].timeTracked = timeTracked;
-    return true;
-  }
-  return false;
-};
-
-BoardModel.prototype.addTimeTracked = function (id, minutes) {
-  if (this.tasks[id]) {
-    this.tasks[id].timeTracked = (this.tasks[id].timeTracked || 0) + minutes;
+    this.tasks[id].textStyle = textStyle;
     return true;
   }
   return false;
@@ -259,7 +251,7 @@ BoardModel.prototype.toJSON = function () {
     };
     if (t.color) d.color = t.color;
     if (t.dueDate) d.dueDate = t.dueDate;
-    if (t.timeTracked) d.timeTracked = t.timeTracked;
+    if (t.textStyle) d.textStyle = t.textStyle;
     if (t.type === 'List' && t.listItems) d.listItems = t.listItems;
     if (t.type === 'Image') {
       if (t.imageData) d.imageData = t.imageData;
@@ -296,7 +288,7 @@ BoardModel.prototype.loadFromJSON = function (data) {
         type: t.type || 'Text',
         created_at: t.created_at || new Date().toISOString(),
         dueDate: t.dueDate || null,
-        timeTracked: t.timeTracked || 0
+        textStyle: t.textStyle || null
       };
     if (t.type === 'List' && Array.isArray(t.listItems)) {
       task.listItems = t.listItems.map(function (it) {

@@ -262,6 +262,7 @@ function buildTypeFields(type, task) {
 }
 
 function buildDueDateSelects(dueDate) {
+  var hasDue = !!dueDate;
   var date = dueDate ? new Date(dueDate) : new Date();
   date.setHours(date.getHours() + 1);
   var year = date.getFullYear();
@@ -285,26 +286,38 @@ function buildDueDateSelects(dueDate) {
   var hourOpts = hours.map(function(h) { return '<option value="' + h + '"' + (h === hour ? ' selected' : '') + '>' + String(h).padStart(2, '0') + '</option>'; }).join('');
   var minuteOpts = minutes.map(function(m) { return '<option value="' + m + '"' + (m === String(minute).padStart(2, '0') ? ' selected' : '') + '>' + m + '</option>'; }).join('');
 
-  return '<div class="dlg-row">' +
-    '<label class="dlg-label">Due Date:</label>' +
+  return '<div class="dlg-row" style="flex-wrap:wrap;">' +
+    '<label class="dlg-label" style="display:flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" id="td-due-enable" ' + (hasDue ? 'checked' : '') + ' style="width:auto;"> Due date</label>' +
+    '<span id="td-due-fields" style="display:' + (hasDue ? 'flex' : 'none') + ';gap:6px;align-items:center;flex-wrap:wrap;margin-left:8px;">' +
     '<select class="dlg-select" id="td-due-year" style="width:70px;">' + yearOpts + '</select>' +
     '<select class="dlg-select" id="td-due-month" style="width:70px;">' + monthOpts + '</select>' +
     '<select class="dlg-select" id="td-due-day" style="width:60px;">' + dayOpts + '</select>' +
-    '<label class="dlg-label" style="margin-left:8px;">Time:</label>' +
     '<select class="dlg-select" id="td-due-hour" style="width:60px;">' + hourOpts + '</select>' +
     '<span>:</span>' +
     '<select class="dlg-select" id="td-due-minute" style="width:60px;">' + minuteOpts + '</select>' +
+    '</span>' +
     '</div>';
 }
 
-function buildTimeTrackingCheckbox(timeTracked) {
-  var hours = Math.floor(timeTracked / 60);
-  var mins = timeTracked % 60;
-  var display = hours > 0 ? hours + 'h ' + mins + 'm' : mins + 'm';
-  return '<div class="dlg-row">' +
-    '<label class="dlg-label">Time Tracking:</label>' +
-    '<input type="checkbox" id="td-time-track" ' + (timeTracked > 0 ? 'checked' : '') + ' style="width:auto;margin-right:6px;">' +
-    '<span id="td-time-display" style="font-family:monospace;color:#8B6914;">' + display + '</span>' +
+function buildStyleControls(textStyle) {
+  var s = textStyle || {};
+  var bold = !!s.bold;
+  var italic = !!s.italic;
+  var underline = !!s.underline;
+  var style = s.preset || 'default';
+  return '<div class="dlg-label" style="margin-top:8px;">Text style (Canva-like):</div>' +
+    '<div class="dlg-row" style="gap:8px;flex-wrap:wrap;">' +
+    '<label class="dlg-label" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="td-style-bold" ' + (bold ? 'checked' : '') + ' style="width:auto;"><b>B</b></label>' +
+    '<label class="dlg-label" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="td-style-italic" ' + (italic ? 'checked' : '') + ' style="width:auto;"><i>I</i></label>' +
+    '<label class="dlg-label" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="td-style-underline" ' + (underline ? 'checked' : '') + ' style="width:auto;"><u>U</u></label>' +
+    '<select class="dlg-select" id="td-style-preset" style="min-width:140px;">' +
+    '<option value="default"' + (style === 'default' ? ' selected' : '') + '>Default</option>' +
+    '<option value="heading"' + (style === 'heading' ? ' selected' : '') + '>Heading Bold</option>' +
+    '<option value="elegant"' + (style === 'elegant' ? ' selected' : '') + '>Elegant Italic</option>' +
+    '<option value="mono"' + (style === 'mono' ? ' selected' : '') + '>Mono Code</option>' +
+    '<option value="hand"' + (style === 'hand' ? ' selected' : '') + '>Handwritten</option>' +
+    '<option value="poster"' + (style === 'poster' ? ' selected' : '') + '>Poster Caps</option>' +
+    '</select>' +
     '</div>';
 }
 
@@ -316,7 +329,7 @@ function taskDialog(mode, task) {
     var currentType = initialType;
     var imageFile = null;
     var initialDueDate = task ? task.dueDate : null;
-    var initialTimeTracked = task ? (task.timeTracked || 0) : 0;
+    var initialStyle = task ? (task.textStyle || null) : null;
 
     var d = openDialog(
       '<h3>' + (isAdd ? 'New Note' : 'Edit Note') + '</h3>' +
@@ -333,7 +346,7 @@ function taskDialog(mode, task) {
       '<button type="button" class="dlg-btn small" id="td-more-toggle" style="margin:4px 0 8px;padding:4px 12px;background:#3E2710;border-color:#8B6914;">\u25BC More options</button>' +
       '<div id="td-more-fields" style="display:none;">' +
       buildDueDateSelects(initialDueDate) +
-      buildTimeTrackingCheckbox(initialTimeTracked) +
+      buildStyleControls(initialStyle) +
       '</div>' +
       '<div id="td-type-fields"></div>' +
       '<div class="dlg-actions">' +
@@ -398,21 +411,23 @@ function taskDialog(mode, task) {
       moreToggle.textContent = (moreOpen ? '\u25B2' : '\u25BC') + ' ' + (moreOpen ? 'Less options' : 'More options');
     });
 
+    var dueEnable = d.box.querySelector('#td-due-enable');
+    var dueFields = d.box.querySelector('#td-due-fields');
     var dueYearSelect = d.box.querySelector('#td-due-year');
     var dueMonthSelect = d.box.querySelector('#td-due-month');
     var dueDaySelect = d.box.querySelector('#td-due-day');
     var dueHourSelect = d.box.querySelector('#td-due-hour');
     var dueMinuteSelect = d.box.querySelector('#td-due-minute');
-    var timeTrackCheckbox = d.box.querySelector('#td-time-track');
-    var timeDisplay = d.box.querySelector('#td-time-display');
-    var currentTimeTracked = initialTimeTracked;
+    var styleBold = d.box.querySelector('#td-style-bold');
+    var styleItalic = d.box.querySelector('#td-style-italic');
+    var styleUnderline = d.box.querySelector('#td-style-underline');
+    var stylePreset = d.box.querySelector('#td-style-preset');
 
-    timeTrackCheckbox.addEventListener('change', function() {
-      if (!timeTrackCheckbox.checked) {
-        currentTimeTracked = 0;
-        if (timeDisplay) timeDisplay.textContent = '0m';
-      }
-    });
+    if (dueEnable && dueFields) {
+      dueEnable.addEventListener('change', function() {
+        dueFields.style.display = dueEnable.checked ? 'flex' : 'none';
+      });
+    }
 
     function submit() {
       var title = titleInput.value.trim();
@@ -423,14 +438,27 @@ function taskDialog(mode, task) {
       var priority = getPriority();
       var color = model.custom_priorities[priority] || null;
       var dueDate = null;
-      var year = parseInt(dueYearSelect.value, 10);
-      var month = parseInt(dueMonthSelect.value, 10);
-      var day = parseInt(dueDaySelect.value, 10);
-      var hour = parseInt(dueHourSelect.value, 10);
-      var minute = parseInt(dueMinuteSelect.value, 10);
-      var dt = new Date(year, month, day, hour, minute, 0, 0);
-      if (!isNaN(dt.getTime())) dueDate = dt.toISOString();
-      var timeTracked = timeTrackCheckbox.checked ? currentTimeTracked : 0;
+      if (dueEnable && dueEnable.checked) {
+        var year = parseInt(dueYearSelect.value, 10);
+        var month = parseInt(dueMonthSelect.value, 10);
+        var day = parseInt(dueDaySelect.value, 10);
+        var hour = parseInt(dueHourSelect.value, 10);
+        var minute = parseInt(dueMinuteSelect.value, 10);
+        var dt = new Date(year, month, day, hour, minute, 0, 0);
+        if (!isNaN(dt.getTime())) dueDate = dt.toISOString();
+      }
+      var textStyle = null;
+      if (styleBold || styleItalic || styleUnderline || stylePreset) {
+        var hasStyle = styleBold.checked || styleItalic.checked || styleUnderline.checked || (stylePreset.value !== 'default');
+        if (hasStyle) {
+          textStyle = {
+            bold: !!styleBold.checked,
+            italic: !!styleItalic.checked,
+            underline: !!styleUnderline.checked,
+            preset: stylePreset.value
+          };
+        }
+      }
       var typeData = {};
       if (currentType === 'List') {
         var text = typeFields.querySelector('#td-list-items').value;
@@ -445,7 +473,7 @@ function taskDialog(mode, task) {
             typeData.imageData = reader.result;
             typeData.caption = typeFields.querySelector('#td-image-caption').value.trim();
             d.close();
-            resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, timeTracked: timeTracked });
+            resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, textStyle: textStyle });
           };
           reader.readAsDataURL(imageFile);
           return;
@@ -462,7 +490,7 @@ function taskDialog(mode, task) {
         typeData.textContent = typeFields.querySelector('#td-text-content').value;
       }
       d.close();
-      resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, timeTracked: timeTracked });
+      resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, textStyle: textStyle });
     }
 
     d.box.querySelector('[data-act="ok"]').addEventListener('click', submit);
@@ -479,7 +507,7 @@ function taskDialog(mode, task) {
 
 function addNoteFlow() {
   taskDialog('add', null).then(function (data) {
-    if (data) addTaskFlow(data.title, data.priority, data.color, data.type, data.typeData, data.dueDate, data.timeTracked);
+    if (data) addTaskFlow(data.title, data.priority, data.color, data.type, data.typeData, data.dueDate, data.textStyle);
   });
 }
 
@@ -494,7 +522,7 @@ function editNoteFlow(task) {
       task.priority = data.priority;
       task.color = data.color;
       if (data.dueDate !== undefined) model.updateDueDate(task.id, data.dueDate);
-      if (data.timeTracked !== undefined) model.updateTimeTracked(task.id, data.timeTracked);
+      if (data.textStyle !== undefined) model.updateTextStyle(task.id, data.textStyle);
       if (data.type === 'List' && data.typeData) model.updateListItems(task.id, data.typeData.items);
       else if (data.type === 'Image' && data.typeData) model.updateImageData(task.id, data.typeData.imageData, data.typeData.caption);
       else if (data.type === 'Code' && data.typeData) model.updateCodeContent(task.id, data.typeData.codeContent, data.typeData.language);

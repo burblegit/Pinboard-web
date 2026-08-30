@@ -292,7 +292,7 @@ function buildDueDateSelects(dueDate) {
   var hourOpts = hours.map(function(h) { return '<option value="' + h + '"' + (h === hour ? ' selected' : '') + '>' + String(h).padStart(2, '0') + '</option>'; }).join('');
   var minuteOpts = minutes.map(function(m) { return '<option value="' + m + '"' + (m === String(minute).padStart(2, '0') ? ' selected' : '') + '>' + m + '</option>'; }).join('');
 
-  return '<div class="dlg-row"><button type="button" class="btn' + (hasDue ? ' pressed' : '') + '" id="td-due-enable" style="min-width:90px;">\uD83D\uDCC5 Due date</button></div>' +
+  return '<div class="dlg-row" style="align-items:center;"><button type="button" class="btn' + (hasDue ? ' pressed' : '') + '" id="td-due-enable" style="min-width:36px;min-height:28px;"></button><span class="dlg-label" style="margin:0 0 0 8px;">Due date</span></div>' +
     '<div id="td-due-fields" style="display:' + (hasDue ? 'flex' : 'none') + ';gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;">' +
     '<select class="dlg-select" id="td-due-year" style="width:70px;">' + yearOpts + '</select>' +
     '<select class="dlg-select" id="td-due-month" style="width:70px;">' + monthOpts + '</select>' +

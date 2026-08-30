@@ -31,7 +31,7 @@ function BoardModel() {
   this.custom_priorities = {};
 }
 
-BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typeData, dueDate, textStyle) {
+BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typeData, dueDate) {
   var task = {
     id: Math.random().toString(16).substr(2, 8),
     title: title,
@@ -42,8 +42,7 @@ BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typ
     color: color || null,
     type: type || 'Text',
     created_at: new Date().toISOString(),
-    dueDate: dueDate || null,
-    textStyle: textStyle || null
+    dueDate: dueDate || null
   };
   if (type === 'List') {
     task.listItems = (typeData && typeData.items) || [{ text: '', completed: false }];
@@ -140,13 +139,7 @@ BoardModel.prototype.updateDueDate = function (id, dueDate) {
   return false;
 };
 
-BoardModel.prototype.updateTextStyle = function (id, textStyle) {
-  if (this.tasks[id]) {
-    this.tasks[id].textStyle = textStyle;
-    return true;
-  }
-  return false;
-};
+
 
 BoardModel.prototype.changeType = function (id, newType, typeData) {
   var task = this.tasks[id];
@@ -251,7 +244,6 @@ BoardModel.prototype.toJSON = function () {
     };
     if (t.color) d.color = t.color;
     if (t.dueDate) d.dueDate = t.dueDate;
-    if (t.textStyle) d.textStyle = t.textStyle;
     if (t.type === 'List' && t.listItems) d.listItems = t.listItems;
     if (t.type === 'Image') {
       if (t.imageData) d.imageData = t.imageData;
@@ -287,8 +279,7 @@ BoardModel.prototype.loadFromJSON = function (data) {
         color: t.color || null,
         type: t.type || 'Text',
         created_at: t.created_at || new Date().toISOString(),
-        dueDate: t.dueDate || null,
-        textStyle: t.textStyle || null
+        dueDate: t.dueDate || null
       };
     if (t.type === 'List' && Array.isArray(t.listItems)) {
       task.listItems = t.listItems.map(function (it) {

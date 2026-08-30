@@ -256,8 +256,18 @@ function buildTypeFields(type, task) {
       return '<div class="dlg-label">Sketch:</label>' +
         '<div class="dlg-message">Draw on the note after creation. Use the sketch toolbar on the note.</div>';
     default:
-      return '<div class="dlg-label">Content:</label>' +
-        '<textarea class="dlg-input" id="td-text-content" rows="4" placeholder="Enter note text...">' + esc(task && task.content ? task.content : '') + '</textarea>';
+      var initialContent = task && task.content ? task.content : '';
+      return '<div class="dlg-label">Content:</div>' +
+        '<div class="dlg-row" style="gap:4px;margin-bottom:6px;background:#1A0E08;padding:4px;border-radius:4px;border:1px solid #8B6914;">' +
+        '<button type="button" class="dlg-btn small" data-cmd="bold" title="Bold (Ctrl+B)" style="font-weight:800;min-width:32px;">B</button>' +
+        '<button type="button" class="dlg-btn small" data-cmd="italic" title="Italic (Ctrl+I)" style="font-style:italic;min-width:32px;">I</button>' +
+        '<button type="button" class="dlg-btn small" data-cmd="underline" title="Underline (Ctrl+U)" style="text-decoration:underline;min-width:32px;">U</button>' +
+        '<span style="width:1px;background:#8B6914;margin:0 4px;"></span>' +
+        '<select class="dlg-select" id="td-block" style="width:auto;"><option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="blockquote">Quote</option></select>' +
+        '<select class="dlg-select" id="td-fontsize" style="width:auto;"><option value="3">A-</option><option value="4" selected>A</option><option value="5">A+</option><option value="6">A++</option></select>' +
+        '<input type="color" id="td-color" value="#2C1A0E" title="Text color" style="width:32px;height:28px;padding:2px;">' +
+        '</div>' +
+        '<div class="dlg-input" id="td-text-content" contenteditable="true" style="min-height:80px;max-height:160px;overflow:auto;text-align:left;background:#F5E6C8;color:#2C1A0E;padding:8px;white-space:pre-wrap;word-wrap:break-word;">' + initialContent + '</div>';
   }
 }
 
@@ -299,27 +309,7 @@ function buildDueDateSelects(dueDate) {
     '</div>';
 }
 
-function buildStyleControls(textStyle) {
-  var s = textStyle || {};
-  var bold = !!s.bold;
-  var italic = !!s.italic;
-  var underline = !!s.underline;
-  var style = s.preset || 'default';
-  return '<div class="dlg-label" style="margin-top:8px;">Text style (Canva-like):</div>' +
-    '<div class="dlg-row" style="gap:8px;flex-wrap:wrap;">' +
-    '<label class="dlg-label" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="td-style-bold" ' + (bold ? 'checked' : '') + ' style="width:auto;"><b>B</b></label>' +
-    '<label class="dlg-label" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="td-style-italic" ' + (italic ? 'checked' : '') + ' style="width:auto;"><i>I</i></label>' +
-    '<label class="dlg-label" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="td-style-underline" ' + (underline ? 'checked' : '') + ' style="width:auto;"><u>U</u></label>' +
-    '<select class="dlg-select" id="td-style-preset" style="min-width:140px;">' +
-    '<option value="default"' + (style === 'default' ? ' selected' : '') + '>Default</option>' +
-    '<option value="heading"' + (style === 'heading' ? ' selected' : '') + '>Heading Bold</option>' +
-    '<option value="elegant"' + (style === 'elegant' ? ' selected' : '') + '>Elegant Italic</option>' +
-    '<option value="mono"' + (style === 'mono' ? ' selected' : '') + '>Mono Code</option>' +
-    '<option value="hand"' + (style === 'hand' ? ' selected' : '') + '>Handwritten</option>' +
-    '<option value="poster"' + (style === 'poster' ? ' selected' : '') + '>Poster Caps</option>' +
-    '</select>' +
-    '</div>';
-}
+
 
 function taskDialog(mode, task) {
   return new Promise(function (resolve) {
@@ -329,7 +319,6 @@ function taskDialog(mode, task) {
     var currentType = initialType;
     var imageFile = null;
     var initialDueDate = task ? task.dueDate : null;
-    var initialStyle = task ? (task.textStyle || null) : null;
 
     var d = openDialog(
       '<h3>' + (isAdd ? 'New Note' : 'Edit Note') + '</h3>' +
@@ -346,7 +335,6 @@ function taskDialog(mode, task) {
       '<button type="button" class="dlg-btn small" id="td-more-toggle" style="margin:4px 0 8px;padding:4px 12px;background:#3E2710;border-color:#8B6914;">\u25BC More options</button>' +
       '<div id="td-more-fields" style="display:none;">' +
       buildDueDateSelects(initialDueDate) +
-      buildStyleControls(initialStyle) +
       '</div>' +
       '<div id="td-type-fields"></div>' +
       '<div class="dlg-actions">' +
@@ -397,10 +385,10 @@ function taskDialog(mode, task) {
 
     typeSelect.addEventListener('change', function () {
       currentType = typeSelect.value;
-      updateTypeFields();
+      updateTypeFieldsWrapped();
     });
 
-    updateTypeFields();
+    updateTypeFieldsWrapped();
 
     var moreToggle = d.box.querySelector('#td-more-toggle');
     var moreFields = d.box.querySelector('#td-more-fields');
@@ -418,15 +406,45 @@ function taskDialog(mode, task) {
     var dueDaySelect = d.box.querySelector('#td-due-day');
     var dueHourSelect = d.box.querySelector('#td-due-hour');
     var dueMinuteSelect = d.box.querySelector('#td-due-minute');
-    var styleBold = d.box.querySelector('#td-style-bold');
-    var styleItalic = d.box.querySelector('#td-style-italic');
-    var styleUnderline = d.box.querySelector('#td-style-underline');
-    var stylePreset = d.box.querySelector('#td-style-preset');
 
     if (dueEnable && dueFields) {
       dueEnable.addEventListener('change', function() {
         dueFields.style.display = dueEnable.checked ? 'flex' : 'none';
       });
+    }
+
+    function wireRichToolbar() {
+      var editor = d.box.querySelector('#td-text-content');
+      if (!editor) return;
+      var toolbar = editor.previousElementSibling;
+      if (!toolbar || !toolbar.querySelector('[data-cmd]')) return;
+      toolbar.querySelectorAll('[data-cmd]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          editor.focus();
+          document.execCommand(btn.getAttribute('data-cmd'), false, null);
+        });
+      });
+      var blockSel = d.box.querySelector('#td-block');
+      if (blockSel) blockSel.addEventListener('change', function() {
+        editor.focus();
+        document.execCommand('formatBlock', false, blockSel.value);
+      });
+      var sizeSel = d.box.querySelector('#td-fontsize');
+      if (sizeSel) sizeSel.addEventListener('change', function() {
+        editor.focus();
+        document.execCommand('fontSize', false, sizeSel.value);
+      });
+      var colorInp = d.box.querySelector('#td-color');
+      if (colorInp) colorInp.addEventListener('input', function() {
+        editor.focus();
+        document.execCommand('foreColor', false, colorInp.value);
+      });
+    }
+
+    function updateTypeFieldsWrapped() {
+      updateTypeFields();
+      wireRichToolbar();
     }
 
     function submit() {
@@ -447,18 +465,7 @@ function taskDialog(mode, task) {
         var dt = new Date(year, month, day, hour, minute, 0, 0);
         if (!isNaN(dt.getTime())) dueDate = dt.toISOString();
       }
-      var textStyle = null;
-      if (styleBold || styleItalic || styleUnderline || stylePreset) {
-        var hasStyle = styleBold.checked || styleItalic.checked || styleUnderline.checked || (stylePreset.value !== 'default');
-        if (hasStyle) {
-          textStyle = {
-            bold: !!styleBold.checked,
-            italic: !!styleItalic.checked,
-            underline: !!styleUnderline.checked,
-            preset: stylePreset.value
-          };
-        }
-      }
+
       var typeData = {};
       if (currentType === 'List') {
         var text = typeFields.querySelector('#td-list-items').value;
@@ -473,7 +480,7 @@ function taskDialog(mode, task) {
             typeData.imageData = reader.result;
             typeData.caption = typeFields.querySelector('#td-image-caption').value.trim();
             d.close();
-            resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, textStyle: textStyle });
+            resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate });
           };
           reader.readAsDataURL(imageFile);
           return;
@@ -487,10 +494,11 @@ function taskDialog(mode, task) {
       } else if (currentType === 'Sketch') {
         typeData.sketchData = null;
       } else {
-        typeData.textContent = typeFields.querySelector('#td-text-content').value;
+        var richEl = typeFields.querySelector('#td-text-content');
+        typeData.textContent = richEl ? richEl.innerHTML : '';
       }
       d.close();
-      resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, textStyle: textStyle });
+      resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate });
     }
 
     d.box.querySelector('[data-act="ok"]').addEventListener('click', submit);
@@ -507,7 +515,7 @@ function taskDialog(mode, task) {
 
 function addNoteFlow() {
   taskDialog('add', null).then(function (data) {
-    if (data) addTaskFlow(data.title, data.priority, data.color, data.type, data.typeData, data.dueDate, data.textStyle);
+    if (data) addTaskFlow(data.title, data.priority, data.color, data.type, data.typeData, data.dueDate);
   });
 }
 
@@ -522,7 +530,6 @@ function editNoteFlow(task) {
       task.priority = data.priority;
       task.color = data.color;
       if (data.dueDate !== undefined) model.updateDueDate(task.id, data.dueDate);
-      if (data.textStyle !== undefined) model.updateTextStyle(task.id, data.textStyle);
       if (data.type === 'List' && data.typeData) model.updateListItems(task.id, data.typeData.items);
       else if (data.type === 'Image' && data.typeData) model.updateImageData(task.id, data.typeData.imageData, data.typeData.caption);
       else if (data.type === 'Code' && data.typeData) model.updateCodeContent(task.id, data.typeData.codeContent, data.typeData.language);

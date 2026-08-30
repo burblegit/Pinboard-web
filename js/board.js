@@ -139,18 +139,6 @@ function formatDueDate(dueDate) {
   return '\uD83D\uDCC5 Due: ' + label + ' (' + days + 'd)';
 }
 
-function applyTextStyle(el, style) {
-  if (!style) return;
-  if (style.bold) el.style.fontWeight = '800';
-  if (style.italic) el.style.fontStyle = 'italic';
-  if (style.underline) el.style.textDecoration = 'underline';
-  if (style.preset === 'heading') { el.style.fontSize = '13px'; el.style.fontWeight = '800'; el.style.letterSpacing = '0.5px'; }
-  else if (style.preset === 'elegant') { el.style.fontFamily = 'Georgia, serif'; el.style.fontStyle = 'italic'; }
-  else if (style.preset === 'mono') { el.style.fontFamily = 'Courier New, monospace'; el.style.fontSize = '11px'; }
-  else if (style.preset === 'hand') { el.style.fontFamily = 'Comic Sans MS, cursive'; }
-  else if (style.preset === 'poster') { el.style.fontWeight = '900'; el.style.textTransform = 'uppercase'; el.style.letterSpacing = '1px'; }
-}
-
 function createNoteBase(task, colors) {
   var el = document.createElement('div');
   el.className = 'note ' + (task.type || 'Text').toLowerCase();
@@ -175,7 +163,6 @@ function createNoteBase(task, colors) {
   var title = document.createElement('div');
   title.className = 'title';
   title.textContent = task.title;
-  applyTextStyle(title, task.textStyle);
   el.appendChild(title);
 
   var tag = document.createElement('div');
@@ -212,8 +199,7 @@ function renderTextContent(task, el) {
   if (task.content) {
     var contentDiv = document.createElement('div');
     contentDiv.className = 'note-body';
-    contentDiv.textContent = task.content;
-    applyTextStyle(contentDiv, task.textStyle);
+    contentDiv.innerHTML = task.content;
     el.appendChild(contentDiv);
   }
 }
@@ -479,28 +465,7 @@ function refreshNoteEl(id) {
     dueDiv.remove();
   }
 
-  var titleEl = el.querySelector('.title');
-  if (titleEl) {
-    titleEl.style.fontWeight = '';
-    titleEl.style.fontStyle = '';
-    titleEl.style.textDecoration = '';
-    titleEl.style.fontFamily = '';
-    titleEl.style.fontSize = '';
-    titleEl.style.letterSpacing = '';
-    titleEl.style.textTransform = '';
-    applyTextStyle(titleEl, t.textStyle);
-  }
-  var bodyEl = el.querySelector('.note-body');
-  if (bodyEl) {
-    bodyEl.style.fontWeight = '';
-    bodyEl.style.fontStyle = '';
-    bodyEl.style.textDecoration = '';
-    bodyEl.style.fontFamily = '';
-    bodyEl.style.fontSize = '';
-    bodyEl.style.letterSpacing = '';
-    bodyEl.style.textTransform = '';
-    applyTextStyle(bodyEl, t.textStyle);
-  }
+
 
   var done = el.querySelector('.done-overlay');
   if (t.completed && !done) {
@@ -683,11 +648,11 @@ function renderAll() {
   redrawLinks();
 }
 
-function addTaskFlow(title, priority, color, type, typeData, dueDate, textStyle) {
+function addTaskFlow(title, priority, color, type, typeData, dueDate) {
   var task = model.addTask(title, priority,
     50 + Math.random() * 650,
     50 + Math.random() * 350,
-    color, type, typeData, dueDate, textStyle);
+    color, type, typeData, dueDate);
   addNoteEl(task);
   updateStatus();
 }

@@ -414,28 +414,22 @@ function taskDialog(mode, task) {
       if (!editor) return;
       var toolbar = editor.previousElementSibling;
       if (!toolbar || !toolbar.querySelector('[data-cmd]')) return;
+      function syncButtons() {
+        toolbar.querySelectorAll('[data-cmd]').forEach(function(b) {
+          try { b.classList.toggle('checked', document.queryCommandState(b.getAttribute('data-cmd'))); } catch(e) {}
+        });
+      }
       toolbar.querySelectorAll('[data-cmd]').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.preventDefault();
           editor.focus();
           document.execCommand(btn.getAttribute('data-cmd'), false, null);
+          syncButtons();
         });
       });
-      var blockSel = d.box.querySelector('#td-block');
-      if (blockSel) blockSel.addEventListener('change', function() {
-        editor.focus();
-        document.execCommand('formatBlock', false, blockSel.value);
-      });
-      var sizeSel = d.box.querySelector('#td-fontsize');
-      if (sizeSel) sizeSel.addEventListener('change', function() {
-        editor.focus();
-        document.execCommand('fontSize', false, sizeSel.value);
-      });
-      var colorInp = d.box.querySelector('#td-color');
-      if (colorInp) colorInp.addEventListener('input', function() {
-        editor.focus();
-        document.execCommand('foreColor', false, colorInp.value);
-      });
+      editor.addEventListener('keyup', syncButtons);
+      editor.addEventListener('mouseup', syncButtons);
+      editor.addEventListener('focus', syncButtons);
     }
 
     function updateTypeFieldsWrapped() {

@@ -293,7 +293,7 @@ function buildDueDateSelects(dueDate) {
   var minuteOpts = minutes.map(function(m) { return '<option value="' + m + '"' + (m === String(minute).padStart(2, '0') ? ' selected' : '') + '>' + m + '</option>'; }).join('');
 
   return '<div class="dlg-row" style="flex-wrap:wrap;">' +
-    '<label class="dlg-label" style="display:flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" id="td-due-enable" ' + (hasDue ? 'checked' : '') + ' style="width:auto;"> Due date</label>' +
+    '<button type="button" class="btn' + (hasDue ? ' pressed' : '') + '" id="td-due-enable" style="min-width:90px;">\uD83D\uDCC5 Due date</button>' +
     '<span id="td-due-fields" style="display:' + (hasDue ? 'flex' : 'none') + ';gap:6px;align-items:center;flex-wrap:wrap;margin-left:8px;">' +
     '<select class="dlg-select" id="td-due-year" style="width:70px;">' + yearOpts + '</select>' +
     '<select class="dlg-select" id="td-due-month" style="width:70px;">' + monthOpts + '</select>' +
@@ -404,8 +404,10 @@ function taskDialog(mode, task) {
     var dueMinuteSelect = d.box.querySelector('#td-due-minute');
 
     if (dueEnable && dueFields) {
-      dueEnable.addEventListener('change', function() {
-        dueFields.style.display = dueEnable.checked ? 'flex' : 'none';
+      dueEnable.addEventListener('click', function(e) {
+        e.preventDefault();
+        dueEnable.classList.toggle('pressed');
+        dueFields.style.display = dueEnable.classList.contains('pressed') ? 'flex' : 'none';
       });
     }
 
@@ -446,7 +448,7 @@ function taskDialog(mode, task) {
       var priority = getPriority();
       var color = model.custom_priorities[priority] || null;
       var dueDate = null;
-      if (dueEnable && dueEnable.checked) {
+      if (dueEnable && dueEnable.classList.contains('pressed')) {
         var year = parseInt(dueYearSelect.value, 10);
         var month = parseInt(dueMonthSelect.value, 10);
         var day = parseInt(dueDaySelect.value, 10);

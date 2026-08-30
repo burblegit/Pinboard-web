@@ -335,8 +335,11 @@ function taskDialog(mode, task) {
       '  <label class="dlg-label">Priority:</label>' +
       '  <select class="dlg-select" id="td-priority"></select>' +
       '</div>' +
+      '<button type="button" class="dlg-btn small" id="td-more-toggle" style="margin:4px 0 8px;padding:4px 12px;background:#3E2710;border-color:#8B6914;">\u25BC More options</button>' +
+      '<div id="td-more-fields" style="display:none;">' +
       buildDueDateSelects(initialDueDate) +
       buildTimeTrackingCheckbox(initialTimeTracked) +
+      '</div>' +
       '<div id="td-type-fields"></div>' +
       '<div class="dlg-actions">' +
       '  <button type="button" class="dlg-btn" data-act="cancel">Cancel</button>' +
@@ -390,6 +393,15 @@ function taskDialog(mode, task) {
     });
 
     updateTypeFields();
+
+    var moreToggle = d.box.querySelector('#td-more-toggle');
+    var moreFields = d.box.querySelector('#td-more-fields');
+    var moreOpen = false;
+    moreToggle.addEventListener('click', function () {
+      moreOpen = !moreOpen;
+      moreFields.style.display = moreOpen ? 'block' : 'none';
+      moreToggle.textContent = (moreOpen ? '\u25B2' : '\u25BC') + ' ' + (moreOpen ? 'Less options' : 'More options');
+    });
 
     var noDueCheckbox = d.box.querySelector('#td-no-due');
     var dueYearSelect = d.box.querySelector('#td-due-year');

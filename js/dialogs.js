@@ -261,6 +261,58 @@ function buildTypeFields(type, task) {
   }
 }
 
+function buildDueDateSelects(dueDate) {
+  var date = dueDate ? new Date(dueDate) : new Date();
+  date.setHours(date.getHours() + 1);
+  var year = date.getFullYear();
+  var month = date.getMonth();
+  var day = date.getDate();
+  var hour = date.getHours();
+  var minute = date.getMinutes();
+
+  var years = [];
+  for (var y = year; y <= year + 5; y++) years.push(y);
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var days = [];
+  for (var d = 1; d <= 31; d++) days.push(d);
+  var hours = [];
+  for (var h = 0; h < 24; h++) hours.push(h);
+  var minutes = ['00', '15', '30', '45'];
+
+  var yearOpts = years.map(function(y) { return '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>'; }).join('');
+  var monthOpts = months.map(function(m, i) { return '<option value="' + i + '"' + (i === month ? ' selected' : '') + '>' + m + '</option>'; }).join('');
+  var dayOpts = days.map(function(d) { return '<option value="' + d + '"' + (d === day ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+  var hourOpts = hours.map(function(h) { return '<option value="' + h + '"' + (h === hour ? ' selected' : '') + '>' + String(h).padStart(2, '0') + '</option>'; }).join('');
+  var minuteOpts = minutes.map(function(m) { return '<option value="' + m + '"' + (m === String(minute).padStart(2, '0') ? ' selected' : '') + '>' + m + '</option>'; }).join('');
+
+  return '<div class="dlg-row">' +
+    '<label class="dlg-label">Due Date:</label>' +
+    '<select class="dlg-select" id="td-due-year" style="width:70px;">' + yearOpts + '</select>' +
+    '<select class="dlg-select" id="td-due-month" style="width:70px;">' + monthOpts + '</select>' +
+    '<select class="dlg-select" id="td-due-day" style="width:60px;">' + dayOpts + '</select>' +
+    '<label class="dlg-label" style="margin-left:8px;">Time:</label>' +
+    '<select class="dlg-select" id="td-due-hour" style="width:60px;">' + hourOpts + '</select>' +
+    '<span>:</span>' +
+    '<select class="dlg-select" id="td-due-minute" style="width:60px;">' + minuteOpts + '</select>' +
+    '<label class="dlg-row" style="margin-top:4px;">' +
+    '  <input type="checkbox" id="td-no-due" ' + (!dueDate ? 'checked' : '') + ' style="width:auto;margin-right:6px;">' +
+    '  <span>No due date</span>' +
+    '</label>' +
+    '</div>';
+}
+
+function buildTimeTrackingCheckbox(timeTracked) {
+  var hours = Math.floor(timeTracked / 60);
+  var mins = timeTracked % 60;
+  var display = hours > 0 ? hours + 'h ' + mins + 'm' : mins + 'm';
+  return '<div class="dlg-row">' +
+    '<label class="dlg-label">Time Tracking:</label>' +
+    '<input type="checkbox" id="td-time-track" ' + (timeTracked > 0 ? 'checked' : '') + ' style="width:auto;margin-right:6px;">' +
+    '<span id="td-time-display" style="font-family:monospace;color:#8B6914;">' + display + '</span>' +
+    '<button type="button" class="dlg-btn small" id="td-time-reset" style="margin-left:8px;padding:2px 8px;font-size:11px;" title="Reset timer">Reset</button>' +
+    '</div>';
+}
+
 function taskDialog(mode, task) {
   return new Promise(function (resolve) {
     var initialPriority = task ? task.priority : 'Normal';
@@ -268,6 +320,8 @@ function taskDialog(mode, task) {
     var isAdd = mode === 'add';
     var currentType = initialType;
     var imageFile = null;
+    var initialDueDate = task ? task.dueDate : null;
+    var initialTimeTracked = task ? (task.timeTracked || 0) : 0;
 
     var d = openDialog(
       '<h3>' + (isAdd ? 'New Note' : 'Edit Note') + '</h3>' +
@@ -281,6 +335,8 @@ function taskDialog(mode, task) {
       '  <label class="dlg-label">Priority:</label>' +
       '  <select class="dlg-select" id="td-priority"></select>' +
       '</div>' +
+      buildDueDateSelects(initialDueDate) +
+      buildTimeTrackingCheckbox(initialTimeTracked) +
       '<div id="td-type-fields"></div>' +
       '<div class="dlg-actions">' +
       '  <button type="button" class="dlg-btn" data-act="cancel">Cancel</button>' +
@@ -335,6 +391,39 @@ function taskDialog(mode, task) {
 
     updateTypeFields();
 
+    var noDueCheckbox = d.box.querySelector('#td-no-due');
+    var dueYearSelect = d.box.querySelector('#td-due-year');
+    var dueMonthSelect = d.box.querySelector('#td-due-month');
+    var dueDaySelect = d.box.querySelector('#td-due-day');
+    var dueHourSelect = d.box.querySelector('#td-due-hour');
+    var dueMinuteSelect = d.box.querySelector('#td-due-minute');
+    var timeTrackCheckbox = d.box.querySelector('#td-time-track');
+    var timeDisplay = d.box.querySelector('#td-time-display');
+    var timeResetBtn = d.box.querySelector('#td-time-reset');
+    var currentTimeTracked = initialTimeTracked;
+
+    function updateDueSelectsState() {
+      var disabled = noDueCheckbox.checked;
+      [dueYearSelect, dueMonthSelect, dueDaySelect, dueHourSelect, dueMinuteSelect].forEach(function(sel) {
+        if (sel) sel.disabled = disabled;
+      });
+    }
+    noDueCheckbox.addEventListener('change', updateDueSelectsState);
+    updateDueSelectsState();
+
+    timeTrackCheckbox.addEventListener('change', function() {
+      if (!timeTrackCheckbox.checked) {
+        currentTimeTracked = 0;
+        if (timeDisplay) timeDisplay.textContent = '0m';
+      }
+    });
+
+    timeResetBtn.addEventListener('click', function() {
+      currentTimeTracked = 0;
+      if (timeDisplay) timeDisplay.textContent = '0m';
+      timeTrackCheckbox.checked = false;
+    });
+
     function submit() {
       var title = titleInput.value.trim();
       if (!title) {
@@ -343,6 +432,17 @@ function taskDialog(mode, task) {
       }
       var priority = getPriority();
       var color = model.custom_priorities[priority] || null;
+      var dueDate = null;
+      if (!noDueCheckbox.checked) {
+        var year = parseInt(dueYearSelect.value, 10);
+        var month = parseInt(dueMonthSelect.value, 10);
+        var day = parseInt(dueDaySelect.value, 10);
+        var hour = parseInt(dueHourSelect.value, 10);
+        var minute = parseInt(dueMinuteSelect.value, 10);
+        var dt = new Date(year, month, day, hour, minute, 0, 0);
+        if (!isNaN(dt.getTime())) dueDate = dt.toISOString();
+      }
+      var timeTracked = timeTrackCheckbox.checked ? currentTimeTracked : 0;
       var typeData = {};
       if (currentType === 'List') {
         var text = typeFields.querySelector('#td-list-items').value;
@@ -357,7 +457,7 @@ function taskDialog(mode, task) {
             typeData.imageData = reader.result;
             typeData.caption = typeFields.querySelector('#td-image-caption').value.trim();
             d.close();
-            resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData });
+            resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, timeTracked: timeTracked });
           };
           reader.readAsDataURL(imageFile);
           return;
@@ -374,7 +474,7 @@ function taskDialog(mode, task) {
         typeData.textContent = typeFields.querySelector('#td-text-content').value;
       }
       d.close();
-      resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData });
+      resolve({ title: title, priority: priority, color: color, type: currentType, typeData: typeData, dueDate: dueDate, timeTracked: timeTracked });
     }
 
     d.box.querySelector('[data-act="ok"]').addEventListener('click', submit);
@@ -391,7 +491,7 @@ function taskDialog(mode, task) {
 
 function addNoteFlow() {
   taskDialog('add', null).then(function (data) {
-    if (data) addTaskFlow(data.title, data.priority, data.color, data.type, data.typeData);
+    if (data) addTaskFlow(data.title, data.priority, data.color, data.type, data.typeData, data.dueDate, data.timeTracked);
   });
 }
 
@@ -405,6 +505,8 @@ function editNoteFlow(task) {
       task.title = data.title;
       task.priority = data.priority;
       task.color = data.color;
+      if (data.dueDate !== undefined) model.updateDueDate(task.id, data.dueDate);
+      if (data.timeTracked !== undefined) model.updateTimeTracked(task.id, data.timeTracked);
       if (data.type === 'List' && data.typeData) model.updateListItems(task.id, data.typeData.items);
       else if (data.type === 'Image' && data.typeData) model.updateImageData(task.id, data.typeData.imageData, data.typeData.caption);
       else if (data.type === 'Code' && data.typeData) model.updateCodeContent(task.id, data.typeData.codeContent, data.typeData.language);

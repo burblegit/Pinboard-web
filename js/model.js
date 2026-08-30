@@ -31,7 +31,7 @@ function BoardModel() {
   this.custom_priorities = {};
 }
 
-BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typeData) {
+BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typeData, dueDate, timeTracked) {
   var task = {
     id: Math.random().toString(16).substr(2, 8),
     title: title,
@@ -41,7 +41,9 @@ BoardModel.prototype.addTask = function (title, priority, x, y, color, type, typ
     y: y === undefined ? 50 : y,
     color: color || null,
     type: type || 'Text',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    dueDate: dueDate || null,
+    timeTracked: timeTracked || 0
   };
   if (type === 'List') {
     task.listItems = (typeData && typeData.items) || [{ text: '', completed: false }];
@@ -125,6 +127,30 @@ BoardModel.prototype.updateSketchData = function (id, sketchData) {
 BoardModel.prototype.updateContent = function (id, content) {
   if (this.tasks[id] && this.tasks[id].type === 'Text') {
     this.tasks[id].content = content;
+    return true;
+  }
+  return false;
+};
+
+BoardModel.prototype.updateDueDate = function (id, dueDate) {
+  if (this.tasks[id]) {
+    this.tasks[id].dueDate = dueDate;
+    return true;
+  }
+  return false;
+};
+
+BoardModel.prototype.updateTimeTracked = function (id, timeTracked) {
+  if (this.tasks[id]) {
+    this.tasks[id].timeTracked = timeTracked;
+    return true;
+  }
+  return false;
+};
+
+BoardModel.prototype.addTimeTracked = function (id, minutes) {
+  if (this.tasks[id]) {
+    this.tasks[id].timeTracked = (this.tasks[id].timeTracked || 0) + minutes;
     return true;
   }
   return false;
@@ -232,6 +258,8 @@ BoardModel.prototype.toJSON = function () {
       x: t.x, y: t.y, type: t.type, created_at: t.created_at
     };
     if (t.color) d.color = t.color;
+    if (t.dueDate) d.dueDate = t.dueDate;
+    if (t.timeTracked) d.timeTracked = t.timeTracked;
     if (t.type === 'List' && t.listItems) d.listItems = t.listItems;
     if (t.type === 'Image') {
       if (t.imageData) d.imageData = t.imageData;
@@ -255,19 +283,21 @@ BoardModel.prototype.loadFromJSON = function (data) {
   this.links = new Set();
   this.custom_priorities = {};
   if (!data) return false;
-  (data.tasks || []).forEach(function (t) {
-    if (!t || !t.id) return;
-    var task = {
-      id: t.id,
-      title: t.title || '',
-      priority: t.priority || 'Normal',
-      completed: !!t.completed,
-      x: typeof t.x === 'number' ? t.x : 50,
-      y: typeof t.y === 'number' ? t.y : 50,
-      color: t.color || null,
-      type: t.type || 'Text',
-      created_at: t.created_at || new Date().toISOString()
-    };
+(data.tasks || []).forEach(function (t) {
+      if (!t || !t.id) return;
+      var task = {
+        id: t.id,
+        title: t.title || '',
+        priority: t.priority || 'Normal',
+        completed: !!t.completed,
+        x: typeof t.x === 'number' ? t.x : 50,
+        y: typeof t.y === 'number' ? t.y : 50,
+        color: t.color || null,
+        type: t.type || 'Text',
+        created_at: t.created_at || new Date().toISOString(),
+        dueDate: t.dueDate || null,
+        timeTracked: t.timeTracked || 0
+      };
     if (t.type === 'List' && Array.isArray(t.listItems)) {
       task.listItems = t.listItems.map(function (it) {
         return { text: it.text || '', completed: !!it.completed };

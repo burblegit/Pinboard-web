@@ -126,6 +126,26 @@ function getNoteColors(task) {
   return { base: base, border: border };
 }
 
+function formatDueDate(dueDate) {
+  if (!dueDate) return '';
+  var d = new Date(dueDate);
+  var now = new Date();
+  var diff = d.getTime() - now.getTime();
+  var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  var hours = Math.ceil(diff / (1000 * 60 * 60));
+  var label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  if (diff < 0) return '\u26A0\uFE0F Overdue: ' + label;
+  if (days <= 1) return '\u23F0 Due: ' + label + ' (' + (hours <= 0 ? 'Soon' : hours + 'h') + ')';
+  return '\uD83D\uDCC5 Due: ' + label + ' (' + days + 'd)';
+}
+
+function formatTimeTracked(minutes) {
+  if (!minutes || minutes <= 0) return '';
+  var h = Math.floor(minutes / 60);
+  var m = minutes % 60;
+  return '\u23F1 ' + (h > 0 ? h + 'h ' : '') + m + 'm';
+}
+
 function createNoteBase(task, colors) {
   var el = document.createElement('div');
   el.className = 'note ' + (task.type || 'Text').toLowerCase();
@@ -156,6 +176,26 @@ function createNoteBase(task, colors) {
   tag.className = 'priority-tag';
   tag.textContent = '[' + task.priority + ']';
   el.appendChild(tag);
+
+  if (task.dueDate) {
+    var dueDiv = document.createElement('div');
+    dueDiv.className = 'due-date-tag';
+    dueDiv.textContent = formatDueDate(task.dueDate);
+    dueDiv.style.fontSize = '8px';
+    dueDiv.style.color = new Date(task.dueDate) < new Date() ? '#CC0000' : '#8B6914';
+    dueDiv.style.marginTop = '2px';
+    el.appendChild(dueDiv);
+  }
+
+  if (task.timeTracked && task.timeTracked > 0) {
+    var timeDiv = document.createElement('div');
+    timeDiv.className = 'time-tracked-tag';
+    timeDiv.textContent = formatTimeTracked(task.timeTracked);
+    timeDiv.style.fontSize = '8px';
+    timeDiv.style.color = '#2E7D32';
+    timeDiv.style.marginTop = '2px';
+    el.appendChild(timeDiv);
+  }
 
   if (task.completed) {
     var done = document.createElement('div');
@@ -427,6 +467,36 @@ function refreshNoteEl(id) {
   var cb = el.querySelector('.checkbox');
   if (cb) cb.textContent = t.completed ? '\u2713' : '';
 
+  var dueDiv = el.querySelector('.due-date-tag');
+  if (t.dueDate) {
+    if (!dueDiv) {
+      dueDiv = document.createElement('div');
+      dueDiv.className = 'due-date-tag';
+      dueDiv.style.fontSize = '8px';
+      dueDiv.style.marginTop = '2px';
+      el.insertBefore(dueDiv, el.querySelector('.priority-tag'));
+    }
+    dueDiv.textContent = formatDueDate(t.dueDate);
+    dueDiv.style.color = new Date(t.dueDate) < new Date() ? '#CC0000' : '#8B6914';
+  } else if (dueDiv) {
+    dueDiv.remove();
+  }
+
+  var timeDiv = el.querySelector('.time-tracked-tag');
+  if (t.timeTracked && t.timeTracked > 0) {
+    if (!timeDiv) {
+      timeDiv = document.createElement('div');
+      timeDiv.className = 'time-tracked-tag';
+      timeDiv.style.fontSize = '8px';
+      timeDiv.style.color = '#2E7D32';
+      timeDiv.style.marginTop = '2px';
+      el.insertBefore(timeDiv, el.querySelector('.priority-tag'));
+    }
+    timeDiv.textContent = formatTimeTracked(t.timeTracked);
+  } else if (timeDiv) {
+    timeDiv.remove();
+  }
+
   var done = el.querySelector('.done-overlay');
   if (t.completed && !done) {
     var d = document.createElement('div');
@@ -608,11 +678,11 @@ function renderAll() {
   redrawLinks();
 }
 
-function addTaskFlow(title, priority, color, type, typeData) {
+function addTaskFlow(title, priority, color, type, typeData, dueDate, timeTracked) {
   var task = model.addTask(title, priority,
     50 + Math.random() * 650,
     50 + Math.random() * 350,
-    color, type, typeData);
+    color, type, typeData, dueDate, timeTracked);
   addNoteEl(task);
   updateStatus();
 }

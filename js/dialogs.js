@@ -258,14 +258,10 @@ function buildTypeFields(type, task) {
     default:
       var initialContent = task && task.content ? task.content : '';
       return '<div class="dlg-label">Content:</div>' +
-        '<div class="dlg-row" style="gap:4px;margin-bottom:6px;background:#1A0E08;padding:4px;border-radius:4px;border:1px solid #8B6914;">' +
-        '<button type="button" class="dlg-btn small" data-cmd="bold" title="Bold (Ctrl+B)" style="font-weight:800;min-width:32px;">B</button>' +
-        '<button type="button" class="dlg-btn small" data-cmd="italic" title="Italic (Ctrl+I)" style="font-style:italic;min-width:32px;">I</button>' +
-        '<button type="button" class="dlg-btn small" data-cmd="underline" title="Underline (Ctrl+U)" style="text-decoration:underline;min-width:32px;">U</button>' +
-        '<span style="width:1px;background:#8B6914;margin:0 4px;"></span>' +
-        '<select class="dlg-select" id="td-block" style="width:auto;"><option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="blockquote">Quote</option></select>' +
-        '<select class="dlg-select" id="td-fontsize" style="width:auto;"><option value="3">A-</option><option value="4" selected>A</option><option value="5">A+</option><option value="6">A++</option></select>' +
-        '<input type="color" id="td-color" value="#2C1A0E" title="Text color" style="width:32px;height:28px;padding:2px;">' +
+        '<div class="dlg-row" style="gap:6px;margin-bottom:6px;">' +
+        '<button type="button" class="btn" data-cmd="bold" title="Bold (Ctrl+B)" style="font-weight:800;min-width:36px;">B</button>' +
+        '<button type="button" class="btn" data-cmd="italic" title="Italic (Ctrl+I)" style="font-style:italic;min-width:36px;">I</button>' +
+        '<button type="button" class="btn" data-cmd="underline" title="Underline (Ctrl+U)" style="text-decoration:underline;min-width:36px;">U</button>' +
         '</div>' +
         '<div class="dlg-input" id="td-text-content" contenteditable="true" style="min-height:80px;max-height:160px;overflow:auto;text-align:left;background:#F5E6C8;color:#2C1A0E;padding:8px;white-space:pre-wrap;word-wrap:break-word;">' + initialContent + '</div>';
   }

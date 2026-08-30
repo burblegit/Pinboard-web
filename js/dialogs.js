@@ -294,10 +294,6 @@ function buildDueDateSelects(dueDate) {
     '<select class="dlg-select" id="td-due-hour" style="width:60px;">' + hourOpts + '</select>' +
     '<span>:</span>' +
     '<select class="dlg-select" id="td-due-minute" style="width:60px;">' + minuteOpts + '</select>' +
-    '<label class="dlg-row" style="margin-top:4px;">' +
-    '  <input type="checkbox" id="td-no-due" ' + (!dueDate ? 'checked' : '') + ' style="width:auto;margin-right:6px;">' +
-    '  <span>No due date</span>' +
-    '</label>' +
     '</div>';
 }
 
@@ -309,7 +305,6 @@ function buildTimeTrackingCheckbox(timeTracked) {
     '<label class="dlg-label">Time Tracking:</label>' +
     '<input type="checkbox" id="td-time-track" ' + (timeTracked > 0 ? 'checked' : '') + ' style="width:auto;margin-right:6px;">' +
     '<span id="td-time-display" style="font-family:monospace;color:#8B6914;">' + display + '</span>' +
-    '<button type="button" class="dlg-btn small" id="td-time-reset" style="margin-left:8px;padding:2px 8px;font-size:11px;" title="Reset timer">Reset</button>' +
     '</div>';
 }
 
@@ -403,7 +398,6 @@ function taskDialog(mode, task) {
       moreToggle.textContent = (moreOpen ? '\u25B2' : '\u25BC') + ' ' + (moreOpen ? 'Less options' : 'More options');
     });
 
-    var noDueCheckbox = d.box.querySelector('#td-no-due');
     var dueYearSelect = d.box.querySelector('#td-due-year');
     var dueMonthSelect = d.box.querySelector('#td-due-month');
     var dueDaySelect = d.box.querySelector('#td-due-day');
@@ -411,29 +405,13 @@ function taskDialog(mode, task) {
     var dueMinuteSelect = d.box.querySelector('#td-due-minute');
     var timeTrackCheckbox = d.box.querySelector('#td-time-track');
     var timeDisplay = d.box.querySelector('#td-time-display');
-    var timeResetBtn = d.box.querySelector('#td-time-reset');
     var currentTimeTracked = initialTimeTracked;
-
-    function updateDueSelectsState() {
-      var disabled = noDueCheckbox.checked;
-      [dueYearSelect, dueMonthSelect, dueDaySelect, dueHourSelect, dueMinuteSelect].forEach(function(sel) {
-        if (sel) sel.disabled = disabled;
-      });
-    }
-    noDueCheckbox.addEventListener('change', updateDueSelectsState);
-    updateDueSelectsState();
 
     timeTrackCheckbox.addEventListener('change', function() {
       if (!timeTrackCheckbox.checked) {
         currentTimeTracked = 0;
         if (timeDisplay) timeDisplay.textContent = '0m';
       }
-    });
-
-    timeResetBtn.addEventListener('click', function() {
-      currentTimeTracked = 0;
-      if (timeDisplay) timeDisplay.textContent = '0m';
-      timeTrackCheckbox.checked = false;
     });
 
     function submit() {
@@ -445,15 +423,13 @@ function taskDialog(mode, task) {
       var priority = getPriority();
       var color = model.custom_priorities[priority] || null;
       var dueDate = null;
-      if (!noDueCheckbox.checked) {
-        var year = parseInt(dueYearSelect.value, 10);
-        var month = parseInt(dueMonthSelect.value, 10);
-        var day = parseInt(dueDaySelect.value, 10);
-        var hour = parseInt(dueHourSelect.value, 10);
-        var minute = parseInt(dueMinuteSelect.value, 10);
-        var dt = new Date(year, month, day, hour, minute, 0, 0);
-        if (!isNaN(dt.getTime())) dueDate = dt.toISOString();
-      }
+      var year = parseInt(dueYearSelect.value, 10);
+      var month = parseInt(dueMonthSelect.value, 10);
+      var day = parseInt(dueDaySelect.value, 10);
+      var hour = parseInt(dueHourSelect.value, 10);
+      var minute = parseInt(dueMinuteSelect.value, 10);
+      var dt = new Date(year, month, day, hour, minute, 0, 0);
+      if (!isNaN(dt.getTime())) dueDate = dt.toISOString();
       var timeTracked = timeTrackCheckbox.checked ? currentTimeTracked : 0;
       var typeData = {};
       if (currentType === 'List') {

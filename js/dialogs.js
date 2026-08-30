@@ -416,7 +416,7 @@ function taskDialog(mode, task) {
       if (!toolbar || !toolbar.querySelector('[data-cmd]')) return;
       function syncButtons() {
         toolbar.querySelectorAll('[data-cmd]').forEach(function(b) {
-          try { b.classList.toggle('checked', document.queryCommandState(b.getAttribute('data-cmd'))); } catch(e) {}
+          try { b.classList.toggle('pressed', document.queryCommandState(b.getAttribute('data-cmd'))); } catch(e) {}
         });
       }
       toolbar.querySelectorAll('[data-cmd]').forEach(function(btn) {
